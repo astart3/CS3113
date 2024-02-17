@@ -1,2 +1,3 @@
 ﻿  main.cpp
+C:\Users\cato2\Desktop\NYU\CSUY 3113\CS3113\Simple_2D_Scene\main.cpp(78,72): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
   SDLProject.vcxproj -> C:\Users\cato2\Desktop\NYU\CSUY 3113\CS3113\Simple_2D_Scene\Debug\Simple_2D_Project.exe
