@@ -24,11 +24,6 @@ enum Coordinate
 const int WINDOW_WIDTH = 640 * 2,
 WINDOW_HEIGHT = 480 * 2;
 
-//const float BG_RED = 0.1922f,
-//BG_BLUE = 0.549f,
-//BG_GREEN = 0.9059f,
-//BG_OPACITY = 1.0f;
-
 const float BG_RED = 255.0f,
 BG_BLUE = 255.0f,
 BG_GREEN = 255.0f,
@@ -49,25 +44,21 @@ const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
-const char PLAYER_SPRITE_FILEPATH[] = "assets/sunny.png";
+const char OMORI_SPRITE_FILEPATH[] = "assets/sunny.png";
+const char BOX_SPRITE_FILEPATH[] = "assets/white_space.png";
 
 SDL_Window* g_display_window;
 bool g_game_is_running = true;
 bool g_is_growing = true;
 
 ShaderProgram g_shader_program;
-glm::mat4 view_matrix, g_model_matrix, g_projection_matrix, g_trans_matrix;
+glm::mat4 view_matrix, g_omori_model_matrix, g_box_model_matrix, g_projection_matrix;
+glm::vec3 omori_position = glm::vec3(0.0f, 0.0f, 0.0f);
 
 float g_previous_ticks = 0.0f;
 
-GLuint g_player_texture_id;
-//SDL_Joystick* g_player_one_controller;
-
-// overall position
-//glm::vec3 g_player_position = glm::vec3(0.0f, 0.0f, 0.0f);
-
-// movement tracker
-//glm::vec3 g_player_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+GLuint g_omori_texture_id;
+GLuint g_box_texture_id;
 
 float get_screen_to_ortho(float coordinate, Coordinate axis)
 {
@@ -113,12 +104,9 @@ GLuint load_texture(const char* filepath)
 void initialise()
 {
     // Initialise video and joystick subsystems
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
+    SDL_Init(SDL_INIT_VIDEO);
 
-    // Open the first controller found. Returns null on error
-    //g_player_one_controller = SDL_JoystickOpen(0);
-
-    g_display_window = SDL_CreateWindow("Hello, Textures!",
+    g_display_window = SDL_CreateWindow("Omori 2D Scene",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_OPENGL);
@@ -134,7 +122,8 @@ void initialise()
 
     g_shader_program.load(V_SHADER_PATH, F_SHADER_PATH);
 
-    g_model_matrix = glm::mat4(1.0f);
+    g_omori_model_matrix = glm::mat4(1.0f);
+    g_box_model_matrix = glm::mat4(1.0f);
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
 
@@ -146,7 +135,8 @@ void initialise()
 
     glClearColor(BG_RED, BG_BLUE, BG_GREEN, BG_OPACITY);
 
-    g_player_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
+    g_omori_texture_id = load_texture(OMORI_SPRITE_FILEPATH);
+    g_box_texture_id = load_texture(BOX_SPRITE_FILEPATH);
 
     // enable blending
     glEnable(GL_BLEND);
@@ -155,7 +145,6 @@ void initialise()
 
 void process_input()
 {
-    //g_player_movement = glm::vec3(0.0f);
 
     SDL_Event event;
 
@@ -166,50 +155,10 @@ void process_input()
         case SDL_QUIT:
             g_game_is_running = false;
             break;
-
-       /* case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
-            case SDLK_RIGHT:
-                g_player_movement.x = 1.0f;
-                break;
-            case SDLK_LEFT:
-                g_player_movement.x = -1.0f;
-                break;
-            case SDLK_q:
-                g_game_is_running = false;
-                break;
-            default:
-                break;
-            }*/
         default:
             break;
         }
     }
-
-    //const Uint8* key_states = SDL_GetKeyboardState(NULL); // array of key states [0, 0, 1, 0, 0, ...]
-
-    //if (key_states[SDL_SCANCODE_LEFT])
-    //{
-    //    g_player_movement.x = -1.0f;
-    //}
-    //else if (key_states[SDL_SCANCODE_RIGHT])
-    //{
-    //    g_player_movement.x = 1.0f;
-    //}
-
-    //if (key_states[SDL_SCANCODE_UP])
-    //{
-    //    g_player_movement.y = 1.0f;
-    //}
-    //else if (key_states[SDL_SCANCODE_DOWN])
-    //{
-    //    g_player_movement.y = -1.0f;
-    //}
-
-    //if (glm::length(g_player_movement) > 1.0f)
-    //{
-    //    g_player_movement = glm::normalize(g_player_movement);
-    //}
 }
 
 void update()
@@ -221,8 +170,17 @@ void update()
     // Add             direction       * elapsed time * units per second
     //g_player_position += g_player_movement * delta_time * 1.0f;
 
-    //g_model_matrix = glm::mat4(1.0f);
-    //g_model_matrix = glm::translate(g_model_matrix, g_player_position);
+    g_omori_model_matrix = glm::mat4(1.0f);
+    omori_position = glm::vec3(0.0f, 0.0f, 0.0f);;
+    omori_position.x = -1.0f;
+    omori_position.y = -1.0f;
+    g_omori_model_matrix = glm::translate(g_omori_model_matrix, omori_position);
+
+    g_box_model_matrix = glm::mat4(1.0f);
+    glm::vec3 box_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    box_position.x = -4.0f;
+    box_position.y = -4.0f;
+    g_box_model_matrix = glm::translate(g_box_model_matrix, box_position);
 }
 
 void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
@@ -232,19 +190,40 @@ void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
     glDrawArrays(GL_TRIANGLES, 0, 6); // we are now drawing 2 triangles, so we use 6 instead of 3
 }
 
+
+
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
+    int SCALE = 25;
 
-    // Vertices
+    //// Vertices
+    //float vertices[] = {
+    //    -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
+    //    -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f   // triangle 2
+    //};
+
     float vertices[] = {
-        -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
-        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f   // triangle 2
+    0.0f, 0.0f,             // bottom-left corner
+    191.0f/ SCALE, 0.0f,           // bottom-right corner
+    191.0f / SCALE, 128.0f / SCALE,         // top-right corner
+    0.0f, 0.0f,             // bottom-left corner (repeated for triangle strip)
+    191.0f / SCALE, 128.0f / SCALE,         // top-right corner
+    0.0f, 128.0f / SCALE            // top-left corner
     };
 
-    // Textures
+    //// Textures
+    //float texture_coordinates[] = {
+    //    0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
+    //    0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
+    //};
+
     float texture_coordinates[] = {
-        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
-        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
+    0.0f, 0.0f,     // bottom-left corner
+    1.0f, 0.0f,     // bottom-right corner
+    1.0f, 1.0f,     // top-right corner
+    0.0f, 0.0f,     // bottom-left corner (repeated for triangle strip)
+    1.0f, 1.0f,     // top-right corner
+    0.0f, 1.0f      // top-left corner
     };
 
     glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
@@ -254,7 +233,28 @@ void render() {
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
     // Bind texture
-    draw_object(g_model_matrix, g_player_texture_id);
+    draw_object(g_box_model_matrix, g_box_texture_id);
+
+    // Vertices
+    float vertices2[] = {
+        -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
+        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f   // triangle 2
+    };
+
+    // Textures
+    float texture_coordinates2[] = {
+        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
+        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
+    };
+
+    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices2);
+    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
+
+    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates2);
+    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
+
+    draw_object(g_omori_model_matrix, g_omori_texture_id);
+    
 
     // We disable two attribute arrays now
     glDisableVertexAttribArray(g_shader_program.get_position_attribute());
@@ -265,7 +265,6 @@ void render() {
 
 void shutdown()
 {
-    //SDL_JoystickClose(g_player_one_controller);
     SDL_Quit();
 }
 

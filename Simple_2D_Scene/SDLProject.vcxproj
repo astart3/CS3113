@@ -81,6 +81,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\SDL\glew\include;C:\SDL\SDL2\include;C:\SDL\SDL2_image\include;C:\SDL\SDL2_mixer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -147,6 +148,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\white_space.png" />
     <Image Include="Images\sunny.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
