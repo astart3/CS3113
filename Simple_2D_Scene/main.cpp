@@ -24,11 +24,6 @@ enum Coordinate
 const int WINDOW_WIDTH = 640 * 2,
 WINDOW_HEIGHT = 480 * 2;
 
-const float BG_RED = 255.0f,
-BG_BLUE = 255.0f,
-BG_GREEN = 255.0f,
-BG_OPACITY = 1.0f;
-
 const int VIEWPORT_X = 0,
 VIEWPORT_Y = 0,
 VIEWPORT_WIDTH = WINDOW_WIDTH,
@@ -44,33 +39,30 @@ const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
-const char OMORI_SPRITE_FILEPATH[] = "assets/sunny.png";
-const char BOX_SPRITE_FILEPATH[] = "assets/white_space.png";
+const char OMORI_SPRITE_FILEPATH[] = "assets/sunny.png";     //1200 x 1200
+const char BOX_SPRITE_FILEPATH[] = "assets/white_space.png"; //191 x 128
+const char CAT_SPRITE_FILEPATH[] = "assets/meow.png";        //623 x 400
+const char HAND_SPRITE_FILEPATH[] = "assets/hand.png";       //136 x 369
 
 SDL_Window* g_display_window;
 bool g_game_is_running = true;
 bool g_is_growing = true;
 
 ShaderProgram g_shader_program;
-glm::mat4 view_matrix, g_omori_model_matrix, g_box_model_matrix, g_projection_matrix;
-glm::vec3 omori_position = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::mat4 view_matrix, g_projection_matrix;
+glm::mat4 g_omori_model_matrix, g_box_model_matrix, g_cat_model_matrix, g_hand_model_matrix;
 
 float g_previous_ticks = 0.0f;
 
 GLuint g_omori_texture_id;
 GLuint g_box_texture_id;
+GLuint g_cat_texture_id;
 
-float get_screen_to_ortho(float coordinate, Coordinate axis)
-{
-    switch (axis) {
-    case x_coordinate:
-        return ((coordinate / WINDOW_WIDTH) * 10.0f) - (10.0f / 2.0f);
-    case y_coordinate:
-        return (((WINDOW_HEIGHT - coordinate) / WINDOW_HEIGHT) * 7.5f) - (7.5f / 2.0);
-    default:
-        return 0.0f;
-    }
-}
+float angle = 0.0f;
+float blackout_timer = 0.0f;
+bool blackout = false;
+
+glm::vec3 g_cat_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 GLuint load_texture(const char* filepath)
 {
@@ -114,9 +106,9 @@ void initialise()
     SDL_GLContext context = SDL_GL_CreateContext(g_display_window);
     SDL_GL_MakeCurrent(g_display_window, context);
 
-#ifdef _WINDOWS
-    glewInit();
-#endif
+    #ifdef _WINDOWS
+        glewInit();
+    #endif
 
     glViewport(VIEWPORT_X, VIEWPORT_Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
@@ -124,6 +116,7 @@ void initialise()
 
     g_omori_model_matrix = glm::mat4(1.0f);
     g_box_model_matrix = glm::mat4(1.0f);
+    g_cat_model_matrix = glm::mat4(1.0f);
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
 
@@ -133,10 +126,11 @@ void initialise()
 
     glUseProgram(g_shader_program.get_program_id());
 
-    glClearColor(BG_RED, BG_BLUE, BG_GREEN, BG_OPACITY);
+    glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
 
     g_omori_texture_id = load_texture(OMORI_SPRITE_FILEPATH);
     g_box_texture_id = load_texture(BOX_SPRITE_FILEPATH);
+    g_cat_texture_id = load_texture(CAT_SPRITE_FILEPATH);
 
     // enable blending
     glEnable(GL_BLEND);
@@ -163,24 +157,55 @@ void process_input()
 
 void update()
 {
-    //float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
-    //float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
-    //g_previous_ticks = ticks;
+    float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
+    float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
+    g_previous_ticks = ticks;
 
-    // Add             direction       * elapsed time * units per second
-    //g_player_position += g_player_movement * delta_time * 1.0f;
+    angle += delta_time;
+    //if (angle >= 6.3f) angle = angle - 6.2830f;
+
+    blackout_timer += delta_time;
+
+    if (blackout) {
+        if (blackout_timer >= 3.0f) {
+            blackout = false;
+            glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
+            blackout_timer = 0.0f;
+        }
+    }
+    else {
+        if (blackout_timer >= 10.f) {
+            blackout = true;
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            blackout_timer = 0.0f;
+        }
+    }
+
+    
+
+
+
+    float radius = 3.0f;
+    g_cat_pos.x = sin(angle) * radius;
+    g_cat_pos.y = cos(angle) * radius;
+
+    g_cat_model_matrix = glm::mat4(1.0f);
+    g_cat_model_matrix = glm::translate(g_cat_model_matrix, g_cat_pos);
+    
 
     g_omori_model_matrix = glm::mat4(1.0f);
-    omori_position = glm::vec3(0.0f, 0.0f, 0.0f);;
+    //glm::vec3 omori_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    /*omori_position = glm::vec3(0.0f, 0.0f, 0.0f);;
     omori_position.x = -1.0f;
     omori_position.y = -1.0f;
-    g_omori_model_matrix = glm::translate(g_omori_model_matrix, omori_position);
+    g_omori_model_matrix = glm::translate(g_omori_model_matrix, omori_position);*/
 
     g_box_model_matrix = glm::mat4(1.0f);
     glm::vec3 box_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    box_position.x = -4.0f;
-    box_position.y = -4.0f;
+    //box_position.x = -4.0f;
+    box_position.y = -0.5f;
     g_box_model_matrix = glm::translate(g_box_model_matrix, box_position);
+    glm::vec3 scale_vector = glm::vec3(0.90f, 0.90f, 1.0f);
 }
 
 void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
@@ -194,30 +219,22 @@ void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    int SCALE = 25;
+    if (!blackout){
+    int SCALE = 30;
+    float model_width = 191.0f / SCALE; // Width of the box
+    float model_height = 128.0f / SCALE; // Height of the box
 
-    //// Vertices
-    //float vertices[] = {
-    //    -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
-    //    -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f   // triangle 2
-    //};
-
-    float vertices[] = {
-    0.0f, 0.0f,             // bottom-left corner
-    191.0f/ SCALE, 0.0f,           // bottom-right corner
-    191.0f / SCALE, 128.0f / SCALE,         // top-right corner
-    0.0f, 0.0f,             // bottom-left corner (repeated for triangle strip)
-    191.0f / SCALE, 128.0f / SCALE,         // top-right corner
-    0.0f, 128.0f / SCALE            // top-left corner
+    float box_vertices[] = {
+        -model_width / 2.0f, -model_height / 2.0f,  // bottom-left corner
+        model_width / 2.0f, -model_height / 2.0f,   // bottom-right corner
+        model_width / 2.0f, model_height / 2.0f,     // top-right corner
+        -model_width / 2.0f, -model_height / 2.0f,  // bottom-left corner (repeated for triangle strip)
+        model_width / 2.0f, model_height / 2.0f,     // top-right corner
+        -model_width / 2.0f, model_height / 2.0f    // top-left corner
     };
 
-    //// Textures
-    //float texture_coordinates[] = {
-    //    0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
-    //    0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
-    //};
 
-    float texture_coordinates[] = {
+    float box_texture_coordinates[] = {
     0.0f, 0.0f,     // bottom-left corner
     1.0f, 0.0f,     // bottom-right corner
     1.0f, 1.0f,     // top-right corner
@@ -226,35 +243,70 @@ void render() {
     0.0f, 1.0f      // top-left corner
     };
 
-    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
+    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, box_vertices);
     glEnableVertexAttribArray(g_shader_program.get_position_attribute());
 
-    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
+    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, box_texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
     // Bind texture
     draw_object(g_box_model_matrix, g_box_texture_id);
 
     // Vertices
-    float vertices2[] = {
+    float vertices[] = {
         -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
         -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f   // triangle 2
     };
 
     // Textures
-    float texture_coordinates2[] = {
+    float texture_coordinates[] = {
         0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
         0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
     };
 
-    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices2);
+    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
     glEnableVertexAttribArray(g_shader_program.get_position_attribute());
 
-    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates2);
+    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
     draw_object(g_omori_model_matrix, g_omori_texture_id);
+
+    SCALE = 600;
+    model_width = 623.0f / SCALE; // Width of the box
+    model_height = 400.0f / SCALE; // Height of the box
+
+    float cat_vertices[] = {
+        -model_width / 2.0f, -model_height / 2.0f,  // bottom-left corner
+        model_width / 2.0f, -model_height / 2.0f,   // bottom-right corner
+        model_width / 2.0f, model_height / 2.0f,     // top-right corner
+        -model_width / 2.0f, -model_height / 2.0f,  // bottom-left corner (repeated for triangle strip)
+        model_width / 2.0f, model_height / 2.0f,     // top-right corner
+        -model_width / 2.0f, model_height / 2.0f    // top-left corner
+    };
+
+
+    float cat_texture_coordinates[] = {
+    0.0f, 1.0f,     // bottom-left corner (flipped)
+    1.0f, 1.0f,     // bottom-right corner (flipped)
+    1.0f, 0.0f,     // top-right corner (flipped)
+    0.0f, 1.0f,     // bottom-left corner (repeated for triangle strip, flipped)
+    1.0f, 0.0f,     // top-right corner (flipped)
+    0.0f, 0.0f      // top-left corner (flipped)
+    };
+
+    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, cat_vertices);
+    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
+
+    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, cat_texture_coordinates);
+    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
+
+    draw_object(g_cat_model_matrix, g_cat_texture_id);
     
+    }
+    else {
+        ;
+    }
 
     // We disable two attribute arrays now
     glDisableVertexAttribArray(g_shader_program.get_position_attribute());
