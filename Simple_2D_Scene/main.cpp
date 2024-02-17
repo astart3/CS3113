@@ -13,14 +13,9 @@
 #include "ShaderProgram.h"
 #include "stb_image.h"
 
-enum Coordinate
-{
-    x_coordinate,
-    y_coordinate
-};
-
 #define LOG(argument) std::cout << argument << '\n'
 
+//DEFINE GLOBAL CONSTANTS
 const int WINDOW_WIDTH = 640 * 2,
 WINDOW_HEIGHT = 480 * 2;
 
@@ -39,35 +34,37 @@ const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
+//filepaths for assets
 const char OMORI_SPRITE_FILEPATH[] = "assets/sunny.png";     //1200 x 1200
 const char BOX_SPRITE_FILEPATH[] = "assets/white_space.png"; //191 x 128
 const char CAT_SPRITE_FILEPATH[] = "assets/meow.png";        //623 x 400
 const char HAND_SPRITE_FILEPATH[] = "assets/hand.png";       //136 x 369
 
+//DEFINE GLOBAL VARIABLES
+//texture files
 GLuint g_omori_texture_id;
 GLuint g_box_texture_id;
 GLuint g_cat_texture_id;
 GLuint g_hand_texture_id;
 
 SDL_Window* g_display_window;
-bool g_game_is_running = true;
-bool g_is_growing = true;
+bool g_game_is_running = true; //tracks whether game is running
 
-ShaderProgram g_shader_program;
+ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
+//model matrices of assets use
 glm::mat4 g_omori_model_matrix, g_box_model_matrix, g_cat_model_matrix, g_hand_model_matrix, g_hand2_model_matrix;
 
-float g_previous_ticks = 0.0f;
+float g_previous_ticks = 0.0f; //used for delta time calculation
+float angle = 0.0f;            //keeps track of rotation
+float blackout_timer = 0.0f;   //keeps track of background change interval
+bool blackout = false;         //keeps track of whether background change should occur
+bool black_out_before = false; //whether background change has occured before
 
-float angle = 0.0f;
-float blackout_timer = 0.0f;
-bool blackout = false;
+glm::vec3 g_cat_pos = glm::vec3(0.0f, 0.0f, 0.0f); //keeps track of cat position
+glm::vec3 g_hand_pos = glm::vec3(0.0f, 0.0f, 0.0f);//keeps track of hand position
 
-glm::vec3 g_cat_pos = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_hand_pos = glm::vec3(0.0f, 0.0f, 0.0f);
-
-bool black_out_before = false;
-
+//FUNCTION PROFESSOR WROTE IN CLASS
 GLuint load_texture(const char* filepath)
 {
     // STEP 1: Loading the image file
@@ -132,8 +129,9 @@ void initialise()
 
     glUseProgram(g_shader_program.get_program_id());
 
-    glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
+    glClearColor(255.0f, 255.0f, 255.0f, 1.0f); //sets background to white by default
 
+    //loads textures based on filepath
     g_omori_texture_id = load_texture(OMORI_SPRITE_FILEPATH);
     g_box_texture_id = load_texture(BOX_SPRITE_FILEPATH);
     g_cat_texture_id = load_texture(CAT_SPRITE_FILEPATH);
@@ -166,16 +164,17 @@ void update()
 {
     float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
     float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
-    g_previous_ticks = ticks;
+    g_previous_ticks = ticks; 
 
     angle += delta_time;
-    //if (angle >= 6.3f) angle = angle - 6.2830f;
+    //if (angle >= 6.3f) angle = angle - 6.2830f; couldnt get this to work naturally, we just assume the app won't be open long enough to cause overflow
+    //and that if overflow occurs, the program won't break
 
-    blackout_timer += delta_time;
-    float BLACKOUT_TIME = 3.0f;
-    float NON_BLACKOUT_TIME = 5.0f;
+    blackout_timer += delta_time;    //adjust elapsed time based on delta time
+    float BLACKOUT_TIME = 3.0f;      //constant for how long the screen will be dark
+    float NON_BLACKOUT_TIME = 5.0f;  //constant for how long the screen will be light
 
-    if (blackout) {
+    if (blackout) { //flips between dark and light at time intervals
         if (blackout_timer >= BLACKOUT_TIME) {
             blackout = false;
             glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
@@ -187,56 +186,48 @@ void update()
             blackout = true;
             glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
             blackout_timer = 0.0f;
-            black_out_before = true;
+            black_out_before = true;               //flip this flag to indicate blackout has occured
         }
     }
 
     float radius = 3.0f;
     g_cat_pos.x = sin(angle) * radius;
-    g_cat_pos.y = cos(angle) * radius;
+    g_cat_pos.y = cos(angle) * radius; //cat spins around, so we use sine and cosine
 
     g_cat_model_matrix = glm::mat4(1.0f);
-    g_cat_model_matrix = glm::translate(g_cat_model_matrix, g_cat_pos);
-    
+    g_cat_model_matrix = glm::translate(g_cat_model_matrix, g_cat_pos); //translates cat based on position on circle
 
-    //g_omori_model_matrix = glm::mat4(1.0f);
-    //glm::vec3 omori_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    /*omori_position = glm::vec3(0.0f, 0.0f, 0.0f);;
-    omori_position.x = -1.0f;
-    omori_position.y = -1.0f;
-    g_omori_model_matrix = glm::translate(g_omori_model_matrix, omori_position);*/
-
-    if (black_out_before) {
+    if (black_out_before) { //omori stats spinning after first blackout
         g_omori_model_matrix = glm::rotate(g_omori_model_matrix, 2.0f * delta_time, glm::vec3(0.0f, 0.0f, 1.0f));
     }
+    
+
     g_box_model_matrix = glm::mat4(1.0f);
     glm::vec3 box_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    //box_position.x = -4.0f;
     box_position.y = -0.5f;
-    g_box_model_matrix = glm::translate(g_box_model_matrix, box_position);
+    g_box_model_matrix = glm::translate(g_box_model_matrix, box_position); //translate box
+
     glm::vec3 scale_vector = glm::vec3(0.90f, 0.90f, 1.0f);
-    g_box_model_matrix = glm::scale(g_box_model_matrix, scale_vector);
+    g_box_model_matrix = glm::scale(g_box_model_matrix, scale_vector); //we scale box
 
-
-    //VIEWPORT_WIDTH = WINDOW_WIDTH,
-    //VIEWPORT_HEIGHT = WINDOW_HEIGHT;
+    //CODE FOR HAND MOVEMENT
     float LEFT_MAX = -4.0f;
     float RIGHT_MAX = 4.0f;
     float VERT_DISP = 2.0f;
-    g_hand_pos.x = RIGHT_MAX - (RIGHT_MAX - LEFT_MAX) * blackout_timer / 3.0f;
-    g_hand_pos.y = sin(g_hand_pos.x) * VERT_DISP;
+    g_hand_pos.x = RIGHT_MAX - (RIGHT_MAX - LEFT_MAX) * blackout_timer / 3.0f; //x goes from right to left
+    g_hand_pos.y = sin(g_hand_pos.x) * VERT_DISP; //y is sinosiodal based on x
 
-    g_hand_model_matrix = glm::mat4(1.0f);
-    g_hand_model_matrix = glm::translate(g_hand_model_matrix, g_hand_pos);
+    g_hand_model_matrix = glm::mat4(1.0f); 
+    g_hand_model_matrix = glm::translate(g_hand_model_matrix, g_hand_pos);     //translate hand position based on vector
+
+    //SECOND HAND FOLLOWS MOVEMENT OF FIRST HAND
 
     glm::vec3 hand2_relative_pos = glm::vec3(1.0f, -1.0f, 0.0f);
 
-    g_hand2_model_matrix = glm::translate(g_hand_model_matrix, hand2_relative_pos);
-
-    //item_model_matrix = glm::translate(character_model, glm::vec3(TRANS_VALUE, TRANS_VALUE, 0.0f));
-    //item_model_matrix = glm::rotate(character_model_matrix, ANGLE, glm::vec3(0.0f, 0.0f, 1.0f));
+    g_hand2_model_matrix = glm::translate(g_hand_model_matrix, hand2_relative_pos); //use translation relative to first hand
 }
 
+//FUNCTION PROFESSOR USED IN EXAMPLE
 void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
 {
     g_shader_program.set_model_matrix(object_model_matrix);
@@ -244,15 +235,13 @@ void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
     glDrawArrays(GL_TRIANGLES, 0, 6); // we are now drawing 2 triangles, so we use 6 instead of 3
 }
 
-
-
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
     if (!blackout){
+    //declare vertices based on dimension of image
     int SCALE = 30;
-    float model_width = 191.0f / SCALE; // Width of the box
-    float model_height = 128.0f / SCALE; // Height of the box
-
+    float model_width = 191.0f / SCALE; // width of the image
+    float model_height = 128.0f / SCALE; // height of the image
     float box_vertices[] = {
         -model_width / 2.0f, -model_height / 2.0f,
         model_width / 2.0f, -model_height / 2.0f,  
@@ -261,8 +250,6 @@ void render() {
         model_width / 2.0f, model_height / 2.0f,   
         -model_width / 2.0f, model_height / 2.0f   
     };
-
-
     float box_texture_coordinates[] = {
     0.0f, 0.0f,   
     1.0f, 0.0f,  
@@ -278,7 +265,7 @@ void render() {
     glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, box_texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    draw_object(g_box_model_matrix, g_box_texture_id);
+    draw_object(g_box_model_matrix, g_box_texture_id); //draws box
 
     float vertices[] = {
         -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,  // triangle 1
@@ -296,7 +283,7 @@ void render() {
     glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    draw_object(g_omori_model_matrix, g_omori_texture_id);
+    draw_object(g_omori_model_matrix, g_omori_texture_id); //draws omori
 
     SCALE = 600;
     model_width = 623.0f / SCALE; 
@@ -327,7 +314,7 @@ void render() {
     glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, cat_texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    draw_object(g_cat_model_matrix, g_cat_texture_id);
+    draw_object(g_cat_model_matrix, g_cat_texture_id); //draws cat
     
     } else {
     int SCALE = 300;
@@ -355,9 +342,11 @@ void render() {
     glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    draw_object(g_hand_model_matrix, g_hand_texture_id);
+    draw_object(g_hand_model_matrix, g_hand_texture_id); //draws hand1
 
-    draw_object(g_hand2_model_matrix, g_hand_texture_id);
+    //we do not need to redefine vertices for hand2, since png is same as hand1
+
+    draw_object(g_hand2_model_matrix, g_hand_texture_id); //draws hand2
     }
 
     // We disable two attribute arrays now
