@@ -38,5 +38,8 @@
     <Image Include="assets\white_space.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="assets\hand.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

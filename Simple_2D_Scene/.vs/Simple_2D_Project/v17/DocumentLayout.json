@@ -7,13 +7,6 @@
       "RelativeMoniker": "D:0:0:{0F8B7E43-F01F-46E6-A5A6-217A13937247}|SDLProject.vcxproj|solutionrelative:main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\Exercise_1\\SDLProject\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{0F8B7E43-F01F-46E6-A5A6-217A13937247}|SDLProject.vcxproj|C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\ShaderProgram.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{0F8B7E43-F01F-46E6-A5A6-217A13937247}|SDLProject.vcxproj|solutionrelative:ShaderProgram.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
@@ -29,23 +22,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "stb_image.h",
-              "DocumentMoniker": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\stb_image.h",
-              "RelativeDocumentMoniker": "stb_image.h",
-              "ToolTip": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\stb_image.h",
-              "RelativeToolTip": "stb_image.h",
-              "ViewState": "AQIAAOQEAAAAAAAAAAAAAB4GAAApAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-02-16T21:54:02.385Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "ShaderProgram.cpp",
               "DocumentMoniker": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\ShaderProgram.cpp",
               "RelativeDocumentMoniker": "ShaderProgram.cpp",
@@ -57,7 +38,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "ShaderProgram.h",
               "DocumentMoniker": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\ShaderProgram.h",
               "RelativeDocumentMoniker": "ShaderProgram.h",
@@ -69,25 +50,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "main.cpp",
-              "DocumentMoniker": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\Exercise_1\\SDLProject\\main.cpp",
-              "RelativeDocumentMoniker": "..\\..\\Exercise_1\\SDLProject\\main.cpp",
-              "ToolTip": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\Exercise_1\\SDLProject\\main.cpp",
-              "RelativeToolTip": "..\\..\\Exercise_1\\SDLProject\\main.cpp",
-              "ViewState": "AQIAAGAAAAAAAAAAAAAAAHAAAAAEAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-02-17T04:30:01.161Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\main.cpp",
               "RelativeDocumentMoniker": "main.cpp",
               "ToolTip": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Simple_2D_Scene\\main.cpp",
               "RelativeToolTip": "main.cpp",
-              "ViewState": "AQIAALYAAAAAAAAAAAAAAMUAAAA0AAAA",
+              "ViewState": "AQIAAJAAAAAAAAAAAAAAALsAAAAmAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-02-16T20:26:20.875Z",
               "EditorCaption": ""

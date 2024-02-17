@@ -148,6 +148,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\hand.png" />
     <Image Include="assets\white_space.png" />
     <Image Include="Images\sunny.png" />
   </ItemGroup>
