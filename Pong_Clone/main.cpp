@@ -32,6 +32,8 @@ F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 const float DEGREES_PER_SECOND = 90.0f;
+const float MINIMUM_X_COLLISION_DISTANCE = 0.375f;
+const float MINIMUM_Y_COLLISION_DISTANCE = 1.0f;
 
 const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
@@ -60,7 +62,13 @@ glm::vec3 g_player_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 g_player2_position = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 g_player2_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 
+glm::vec3 g_ball_position = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 g_ball_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+
 float g_player_speed = 5.0f;
+float g_ball_speed = 3.0f;
+
+enum CollisionType { noC, horizC, vertC};
 
 
 //START OF CODE -----------------------------------------------------------------------------------------
@@ -119,6 +127,9 @@ void initialise()
     g_player_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::mat4(1.0f);
     g_ball_model_matrix = glm::mat4(1.0f);
+
+    g_ball_movement = glm::vec3(0.5f, 0.5f, 0.0f);
+
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
 
@@ -191,6 +202,24 @@ void process_input()
     }                                                                        
 }
 
+CollisionType check_collision(glm::vec3& paddle_pos, glm::vec3& ball_pos)
+{ 
+    float dx = abs(ball_pos.x - paddle_pos.x);
+    float dy = abs(ball_pos.y - paddle_pos.y);
+
+    if (dx < MINIMUM_X_COLLISION_DISTANCE && dy < MINIMUM_Y_COLLISION_DISTANCE) {
+        if (ball_pos.y > paddle_pos.y + MINIMUM_Y_COLLISION_DISTANCE or ball_pos.y < paddle_pos.y - MINIMUM_Y_COLLISION_DISTANCE) {
+            return vertC;
+        }
+        else {
+            return horizC;
+        }
+    }
+    else {
+        return CollisionType::noC;
+    }
+}
+
 void update()
 {
     float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
@@ -213,7 +242,34 @@ void update()
     g_player2_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::translate(g_player2_model_matrix, g_player2_position);
 
+    switch (check_collision(g_player_position, g_ball_position)) {
+    case horizC:
+        g_ball_movement.x = -g_ball_movement.x;
+    case vertC:
+        g_ball_movement.y = -g_ball_movement.y;
+    default:
+        break;
+    }
+    switch (check_collision(g_player2_position, g_ball_position)) {
+    case horizC:
+        g_ball_movement.x = -g_ball_movement.x;
+    case vertC:
+        g_ball_movement.y = -g_ball_movement.y;
+    default:
+        break;
+    }
+
+    if (g_ball_position.y > 2.0f) {
+        g_ball_movement.y = -g_ball_movement.y;
+    }
+    if (g_ball_position.y < -2.0f) {
+        g_ball_movement.y = -g_ball_movement.y;
+    }
+
+    g_ball_position += g_ball_movement * g_ball_speed * delta_time;
+
     g_ball_model_matrix = glm::mat4(1.0f);
+    g_ball_model_matrix = glm::translate(g_ball_model_matrix, g_ball_position);
 
 }
 
