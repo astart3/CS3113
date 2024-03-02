@@ -73,6 +73,7 @@ float g_ball_speed = 3.0f;
 enum CollisionType { noC, horizC, vertC};
 
 bool g_gameover = false;
+bool g_singleplayer = false;
 
 
 //START OF CODE -----------------------------------------------------------------------------------------
@@ -175,8 +176,10 @@ void process_input()
             {                                                           
             case SDLK_q: 
                 g_game_is_running = false;                           
-                break;                                               
-                
+                break;    
+            case SDLK_t:
+                g_singleplayer = true;
+                break;
             default:                                                 
                 break;                                               
             }                                                                                                                      
@@ -233,20 +236,33 @@ void update()
 
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
 
+    g_ball_speed += delta_time;
+    LOG(g_ball_speed);
+
     if (g_player_position.y < 2.0f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
     if (g_player_position.y > -2.0f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
     g_player_position.x = -4.0f;
 
-    if (g_player2_position.y < 2.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
-    if (g_player2_position.y > -2.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+    g_player_model_matrix = glm::mat4(1.0f);
+    g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);
+
+    if (not g_singleplayer) {
+        if (g_player2_position.y < 2.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+        if (g_player2_position.y > -2.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+    }
+    else {
+        if (g_ball_position.y > g_player2_position.y) {
+            g_player2_position += glm::vec3(0.0f, 1.0f, 0.0f) * g_player_speed * delta_time;
+        }
+        if (g_ball_position.y < g_player2_position.y) {
+            g_player2_position += glm::vec3(0.0f, -1.0f, 0.0f) * g_player_speed * delta_time;
+        }
+    }
+
     g_player2_position.x = 4.0f;
-
-    g_player_model_matrix = glm::mat4(1.0f);                                      
-    g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);   
-
     g_player2_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::translate(g_player2_model_matrix, g_player2_position);
-
+    
     switch (check_collision(g_player_position, g_ball_position)) {
     case horizC:
         g_ball_movement.x = -g_ball_movement.x;
