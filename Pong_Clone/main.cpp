@@ -47,9 +47,19 @@ GLuint g_paddle_texture_id;
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
 //model matrices of assets use
-glm::mat4 g_model_matrix;
+glm::mat4 g_player_model_matrix, g_player2_model_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
+
+
+glm::vec3 g_player_position = glm::vec3(0.0f, 0.0f, 0.0f);    
+glm::vec3 g_player_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+
+glm::vec3 g_player2_position = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 g_player2_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+
+float g_player_speed = 5.0f;
+
 
 //START OF CODE -----------------------------------------------------------------------------------------
 
@@ -104,7 +114,8 @@ void initialise()
 
     g_shader_program.load(V_SHADER_PATH, F_SHADER_PATH);
 
-    g_model_matrix = glm::mat4(1.0f);
+    g_player_model_matrix = glm::mat4(1.0f);
+    g_player2_model_matrix = glm::mat4(1.0f);
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
 
@@ -126,20 +137,55 @@ void initialise()
 
 void process_input()
 {
-
+    g_player_movement = glm::vec3(0.0f);
+    g_player2_movement = glm::vec3(0.0f);
     SDL_Event event;
 
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type) {
-        case SDL_WINDOWEVENT_CLOSE:
-        case SDL_QUIT:
-            g_game_is_running = false;
-            break;
-        default:
-            break;
-        }
-    }
+    while (SDL_PollEvent(&event))                                           
+    {                                                                        
+        switch (event.type)                                                  
+        {                                                                    
+        case SDL_QUIT:                                                   
+        case SDL_WINDOWEVENT_CLOSE:                                      
+            g_game_is_running = false;                                   
+            break;       
+        //keystrokes check
+        case SDL_KEYDOWN:                                               
+            switch (event.key.keysym.sym)                               
+            {                                                           
+            case SDLK_q: 
+                g_game_is_running = false;                           
+                break;                                               
+                
+            default:                                                 
+                break;                                               
+            }                                                                                                                      
+        default:                                                         
+            break;                                                       
+        }                                                                    
+    }                                                                        
+
+    //key hold checks                                                                       
+    const Uint8* key_state = SDL_GetKeyboardState(NULL);                    
+
+    if (key_state[SDL_SCANCODE_W])                                       
+    {                                                                     
+        g_player_movement.y = 1.0f;                                         
+    }                                                                        
+    else if (key_state[SDL_SCANCODE_S])                                  
+    {                                                                        
+        g_player_movement.y = -1.0f;                                          
+    }                                                                        
+                                                                             
+    if (key_state[SDL_SCANCODE_UP])                                          
+    {                                                                        
+        g_player2_movement.y = 1.0f;                                          
+    }                                                                        
+    else if (key_state[SDL_SCANCODE_DOWN])                                   
+    {                                                                        
+        g_player2_movement.y = -1.0f;                                         
+    }                                                                        
+
 }
 
 void update()
@@ -150,14 +196,17 @@ void update()
 
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
 
+    g_player_position += g_player_movement * g_player_speed * delta_time; 
+    g_player_position.x = -4.0f;
 
-    //g_box_model_matrix = glm::mat4(1.0f);
-    //glm::vec3 box_position = glm::vec3(0.0f, 0.0f, 0.0f);
-    //box_position.y = -0.5f;
-    //g_box_model_matrix = glm::translate(g_box_model_matrix, box_position); //translate box
+    g_player2_position += g_player2_movement * g_player_speed * delta_time;
+    g_player2_position.x = 4.0f;
 
-    //glm::vec3 scale_vector = glm::vec3(0.90f, 0.90f, 1.0f);
-    //g_box_model_matrix = glm::scale(g_box_model_matrix, scale_vector); //we scale box
+    g_player_model_matrix = glm::mat4(1.0f);                                      
+    g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);   
+
+    g_player2_model_matrix = glm::mat4(1.0f);
+    g_player2_model_matrix = glm::translate(g_player2_model_matrix, g_player2_position);
 
 }
 
@@ -198,7 +247,9 @@ void render() {
     glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    draw_object(g_model_matrix, g_paddle_texture_id);
+    draw_object(g_player_model_matrix, g_paddle_texture_id);
+
+    draw_object(g_player2_model_matrix, g_paddle_texture_id);
 
     // We disable two attribute arrays now
     glDisableVertexAttribArray(g_shader_program.get_position_attribute());
