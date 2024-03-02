@@ -38,16 +38,18 @@ const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
 //filepaths for assets
-const char PADDLE_SPRITE_FILEPATH[] = "sprites/paddle.png";     //1200 x 1200
+const char PADDLE_SPRITE_FILEPATH[] = "sprites/paddle.png";     //120 by 240
+const char BALL_SPRITE_FILEPATH[] = "sprites/circle.png";     //100 by 100
 
 //DEFINE GLOBAL VARIABLES
 //texture files
 GLuint g_paddle_texture_id;
+GLuint g_ball_texture_id;
 
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
 //model matrices of assets use
-glm::mat4 g_player_model_matrix, g_player2_model_matrix;
+glm::mat4 g_player_model_matrix, g_player2_model_matrix, g_ball_model_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
 
@@ -116,6 +118,7 @@ void initialise()
 
     g_player_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::mat4(1.0f);
+    g_ball_model_matrix = glm::mat4(1.0f);
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
 
@@ -129,6 +132,7 @@ void initialise()
 
     //loads textures based on filepath
     g_paddle_texture_id = load_texture(PADDLE_SPRITE_FILEPATH);
+    g_ball_texture_id = load_texture(BALL_SPRITE_FILEPATH);
 
     // enable blending
     glEnable(GL_BLEND);
@@ -185,7 +189,6 @@ void process_input()
     {                                                                        
         g_player2_movement.y = -1.0f;                                         
     }                                                                        
-
 }
 
 void update()
@@ -196,10 +199,12 @@ void update()
 
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
 
-    g_player_position += g_player_movement * g_player_speed * delta_time; 
+    if (g_player_position.y < 2.0f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
+    if (g_player_position.y > -2.0f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
     g_player_position.x = -4.0f;
 
-    g_player2_position += g_player2_movement * g_player_speed * delta_time;
+    if (g_player2_position.y < 2.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+    if (g_player2_position.y > -2.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
     g_player2_position.x = 4.0f;
 
     g_player_model_matrix = glm::mat4(1.0f);                                      
@@ -207,6 +212,8 @@ void update()
 
     g_player2_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::translate(g_player2_model_matrix, g_player2_position);
+
+    g_ball_model_matrix = glm::mat4(1.0f);
 
 }
 
@@ -250,6 +257,34 @@ void render() {
     draw_object(g_player_model_matrix, g_paddle_texture_id);
 
     draw_object(g_player2_model_matrix, g_paddle_texture_id);
+
+    SCALE = 200;
+    model_width = 100.0f / SCALE; // width of the image
+    model_height = 100.0f / SCALE; // height of the image
+    float ball_vertices[] = {
+        -model_width / 2.0f, -model_height / 2.0f,
+        model_width / 2.0f, -model_height / 2.0f,
+        model_width / 2.0f, model_height / 2.0f,
+        -model_width / 2.0f, -model_height / 2.0f,
+        model_width / 2.0f, model_height / 2.0f,
+        -model_width / 2.0f, model_height / 2.0f
+    };
+    float ball_texture_coordinates[] = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f
+    };
+
+    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, ball_vertices);
+    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
+
+    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, ball_texture_coordinates);
+    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
+
+    draw_object(g_ball_model_matrix, g_ball_texture_id);
 
     // We disable two attribute arrays now
     glDisableVertexAttribArray(g_shader_program.get_position_attribute());
