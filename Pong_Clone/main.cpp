@@ -40,9 +40,9 @@ const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
 //filepaths for assets
-const char PADDLE_SPRITE_FILEPATH[] = "sprites/paddle.png";     //120 by 240
-const char BALL_SPRITE_FILEPATH[] = "sprites/circle.png";     //100 by 100
-const char OVER_SPRITE_FILEPATH[] = "sprites/game_over.png";     //422 by 182
+const char PADDLE_SPRITE_FILEPATH[] = "sprites/paw.png";     //120 by 240
+const char BALL_SPRITE_FILEPATH[] = "sprites/cat.png";          //100 by 100
+const char OVER_SPRITE_FILEPATH[] = "sprites/game_over.png";    //422 by 182
 
 //DEFINE GLOBAL VARIABLES
 //texture files
@@ -69,6 +69,9 @@ glm::vec3 g_ball_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 
 float g_player_speed = 5.0f;
 float g_ball_speed = 3.0f;
+
+float g_rot_angle = 0.0f;
+const float ROT_SPEED = 300.0f;
 
 enum CollisionType { noC, horizC, vertC};
 
@@ -233,22 +236,23 @@ void update()
     float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
     float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
     g_previous_ticks = ticks;
+    g_rot_angle += delta_time * 100;
 
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
 
     g_ball_speed += delta_time;
     LOG(g_ball_speed);
 
-    if (g_player_position.y < 2.0f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
-    if (g_player_position.y > -2.0f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
+    if (g_player_position.y < 4.0f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
+    if (g_player_position.y > -4.0f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
     g_player_position.x = -4.0f;
 
     g_player_model_matrix = glm::mat4(1.0f);
     g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);
 
     if (not g_singleplayer) {
-        if (g_player2_position.y < 2.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
-        if (g_player2_position.y > -2.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+        if (g_player2_position.y < 4.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+        if (g_player2_position.y > -4.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
     }
     else {
         if (g_ball_position.y > g_player2_position.y) {
@@ -280,10 +284,10 @@ void update()
         break;
     }
 
-    if (g_ball_position.y > 2.0f) {
+    if (g_ball_position.y > 3.5f) {
         g_ball_movement.y = -g_ball_movement.y;
     }
-    if (g_ball_position.y < -2.0f) {
+    if (g_ball_position.y < -3.5f) {
         g_ball_movement.y = -g_ball_movement.y;
     }
     if (g_ball_position.x > 5.0f) {
@@ -297,6 +301,8 @@ void update()
 
     g_ball_model_matrix = glm::mat4(1.0f);
     g_ball_model_matrix = glm::translate(g_ball_model_matrix, g_ball_position);
+
+    g_ball_model_matrix = glm::rotate(g_ball_model_matrix, glm::radians(g_rot_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 
 }
 
@@ -313,7 +319,7 @@ void render() {
     //declare vertices based on dimension of image
     if (not g_gameover) {
         int SCALE = 240;
-        float model_width = 60.0f / SCALE; // width of the image
+        float model_width = 120.0f / SCALE; // width of the image
         float model_height = 240.0f / SCALE; // height of the image
         float vertices[] = {
             model_width / 2.0f, -model_height / 2.0f,

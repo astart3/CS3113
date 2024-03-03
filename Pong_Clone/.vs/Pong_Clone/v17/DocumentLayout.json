@@ -30,9 +30,10 @@
               "RelativeDocumentMoniker": "..\\..\\Exercise_2\\main.cpp",
               "ToolTip": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\Exercise_2\\main.cpp",
               "RelativeToolTip": "..\\..\\Exercise_2\\main.cpp",
-              "ViewState": "AQIAANwAAAAAAAAAAAAewPcAAAAEAAAA",
+              "ViewState": "AQIAAM8AAAAAAAAAAAAhwO0AAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-03-02T22:05:27.539Z"
+              "WhenOpened": "2024-03-02T22:05:27.539Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -44,7 +45,8 @@
               "RelativeToolTip": "..\\Simple_2D_Scene\\main.cpp",
               "ViewState": "AQIAALgAAAAAAAAAAAAAAJgAAAAMAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-03-02T17:43:29.788Z"
+              "WhenOpened": "2024-03-02T17:43:29.788Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -54,7 +56,7 @@
               "RelativeDocumentMoniker": "main.cpp",
               "ToolTip": "C:\\Users\\cato2\\Desktop\\NYU\\CSUY 3113\\CS3113\\Pong_Clone\\main.cpp",
               "RelativeToolTip": "main.cpp",
-              "ViewState": "AQIAANoAAAAAAAAAAAAAAO0AAAAAAAAA",
+              "ViewState": "AQIAAPAAAAAAAAAAAAAAAAgBAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-02-20T23:53:34.128Z",
               "EditorCaption": ""
