@@ -33,7 +33,7 @@ F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 const float MILLISECONDS_IN_SECOND = 1000.0;
 const float DEGREES_PER_SECOND = 90.0f;
 const float MINIMUM_X_COLLISION_DISTANCE = 0.375f;
-const float MINIMUM_Y_COLLISION_DISTANCE = 1.0f;
+const float MINIMUM_Y_COLLISION_DISTANCE = 0.8f;
 
 const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
@@ -42,18 +42,20 @@ const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 //filepaths for assets
 const char PADDLE_SPRITE_FILEPATH[] = "sprites/paw.png";     //120 by 240
 const char BALL_SPRITE_FILEPATH[] = "sprites/cat.png";          //100 by 100
-const char OVER_SPRITE_FILEPATH[] = "sprites/game_over.png";    //422 by 182
+const char OVER_SPRITE_FILEPATH[] = "sprites/player1wins.png";    //422 by 182
+const char OVER2_SPRITE_FILEPATH[] = "sprites/player2wins.png";    //422 by 182
 
 //DEFINE GLOBAL VARIABLES
 //texture files
 GLuint g_paddle_texture_id;
 GLuint g_ball_texture_id;
 GLuint g_over_texture_id;
+GLuint g_over2_texture_id;
 
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
 //model matrices of assets use
-glm::mat4 g_player_model_matrix, g_player2_model_matrix, g_ball_model_matrix;
+glm::mat4 g_player_model_matrix, g_player2_model_matrix, g_ball_model_matrix, g_ball2_model_matrix, g_ball3_model_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
 
@@ -67,6 +69,12 @@ glm::vec3 g_player2_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 g_ball_position = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 g_ball_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 
+glm::vec3 g_ball2_position = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 g_ball2_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+
+glm::vec3 g_ball3_position = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 g_ball3_movement = glm::vec3(0.0f, 0.0f, 0.0f);
+
 float g_player_speed = 5.0f;
 float g_ball_speed = 3.0f;
 
@@ -75,8 +83,15 @@ const float ROT_SPEED = 300.0f;
 
 enum CollisionType { noC, horizC, vertC};
 
+enum BallsNumber {noBalls, oneBall, twoBalls, threeBalls};
+BallsNumber g_balls_number = noBalls;
+
+bool g_balls_generated = false;
+
 bool g_gameover = false;
 bool g_singleplayer = false;
+bool g_player1_wins = true;
+
 
 
 //START OF CODE -----------------------------------------------------------------------------------------
@@ -135,8 +150,12 @@ void initialise()
     g_player_model_matrix = glm::mat4(1.0f);
     g_player2_model_matrix = glm::mat4(1.0f);
     g_ball_model_matrix = glm::mat4(1.0f);
+    g_ball2_model_matrix = glm::mat4(1.0f);
+    g_ball3_model_matrix = glm::mat4(1.0f);
 
     g_ball_movement = glm::vec3(0.5f, 0.5f, 0.0f);
+    g_ball2_movement = glm::vec3(-0.5f, -0.5f, 0.0f);
+    g_ball3_movement = glm::vec3(-0.5f, -0.5f, 0.0f);
 
     view_matrix = glm::mat4(1.0f);  // Defines the position (location and orientation) of the camera
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);  // Defines the characteristics of your camera, such as clip planes, field of view, projection method etc.
@@ -153,6 +172,7 @@ void initialise()
     g_paddle_texture_id = load_texture(PADDLE_SPRITE_FILEPATH);
     g_ball_texture_id = load_texture(BALL_SPRITE_FILEPATH);
     g_over_texture_id = load_texture(OVER_SPRITE_FILEPATH);
+    g_over2_texture_id = load_texture(OVER2_SPRITE_FILEPATH);
 
     // enable blending
     glEnable(GL_BLEND);
@@ -183,6 +203,12 @@ void process_input()
             case SDLK_t:
                 g_singleplayer = true;
                 break;
+            case SDLK_1:
+                if (g_balls_number == noBalls) g_balls_number = oneBall;
+            case SDLK_2:
+                if (g_balls_number == noBalls) g_balls_number = twoBalls;
+            case SDLK_3:
+                if (g_balls_number == noBalls) g_balls_number = threeBalls;
             default:                                                 
                 break;                                               
             }                                                                                                                      
@@ -238,21 +264,27 @@ void update()
     g_previous_ticks = ticks;
     g_rot_angle += delta_time * 100;
 
-    glClearColor(255.0f, 255.0f, 255.0f, 1.0f);
+    glClearColor(255.0f/255.0f, 182.0f / 255.0f, 193.0f / 255.0f, 1.0f);
 
-    g_ball_speed += delta_time;
-    LOG(g_ball_speed);
+    //g_ball_speed += delta_time;
+    
+    if (g_balls_generated == false and not g_balls_number == noBalls) {
+        g_ball_position = glm::vec3(0.0f, 0.0f, 0.0f);
+        g_ball2_position = glm::vec3(0.0f, 2.0f, 0.0f);
+        g_ball3_position = glm::vec3(0.0f, -2.0f, 0.0f);
+        g_balls_generated = true;
+    }
 
-    if (g_player_position.y < 4.0f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
-    if (g_player_position.y > -4.0f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
+    if (g_player_position.y < 3.5f and g_player_movement.y > 0) g_player_position += g_player_movement * g_player_speed * delta_time; 
+    if (g_player_position.y > -3.5f and g_player_movement.y < 0) g_player_position += g_player_movement * g_player_speed * delta_time;
     g_player_position.x = -4.0f;
 
     g_player_model_matrix = glm::mat4(1.0f);
     g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);
 
     if (not g_singleplayer) {
-        if (g_player2_position.y < 4.0f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
-        if (g_player2_position.y > -4.0f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+        if (g_player2_position.y < 3.5f and g_player2_movement.y > 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
+        if (g_player2_position.y > -3.5f and g_player2_movement.y < 0) g_player2_position += g_player2_movement * g_player_speed * delta_time;
     }
     else {
         if (g_ball_position.y > g_player2_position.y) {
@@ -284,25 +316,103 @@ void update()
         break;
     }
 
+    switch (check_collision(g_player_position, g_ball2_position)) {
+    case horizC:
+        g_ball2_movement.x = -g_ball2_movement.x;
+    case vertC:
+        g_ball2_movement.y = -g_ball2_movement.y;
+    default:
+        break;
+    }
+    switch (check_collision(g_player2_position, g_ball2_position)) {
+    case horizC:
+        g_ball2_movement.x = -g_ball2_movement.x;
+    case vertC:
+        g_ball2_movement.y = -g_ball2_movement.y;
+    default:
+        break;
+    }
+
+    switch (check_collision(g_player_position, g_ball3_position)) {
+    case horizC:
+        g_ball3_movement.x = -g_ball3_movement.x;
+    case vertC:
+        g_ball3_movement.y = -g_ball3_movement.y;
+    default:
+        break;
+    }
+    switch (check_collision(g_player2_position, g_ball3_position)) {
+    case horizC:
+        g_ball3_movement.x = -g_ball3_movement.x;
+    case vertC:
+        g_ball3_movement.y = -g_ball3_movement.y;
+    default:
+        break;
+    }
+
     if (g_ball_position.y > 3.5f) {
         g_ball_movement.y = -g_ball_movement.y;
     }
     if (g_ball_position.y < -3.5f) {
         g_ball_movement.y = -g_ball_movement.y;
     }
-    if (g_ball_position.x > 5.0f) {
-        g_gameover = true;
+    if (g_ball2_position.y > 3.5f) {
+        g_ball2_movement.y = -g_ball2_movement.y;
     }
-    if (g_ball_position.x < -5.0f) {
-        g_gameover = true;
+    if (g_ball2_position.y < -3.5f) {
+        g_ball2_movement.y = -g_ball2_movement.y;
+    }
+    if (g_ball3_position.y > 3.5f) {
+        g_ball3_movement.y = -g_ball3_movement.y;
+    }
+    if (g_ball3_position.y < -3.5f) {
+        g_ball3_movement.y = -g_ball3_movement.y;
+    }
+
+    if (g_balls_number == oneBall or g_balls_number == twoBalls or g_balls_number == threeBalls) {
+        if (g_ball_position.x > 5.0f) {
+            g_gameover = true;
+        }
+        if (g_ball_position.x < -5.0f) {
+            g_gameover = true;
+            g_player1_wins = false;
+        }
+    }
+    if (g_balls_number == twoBalls or g_balls_number == threeBalls) {
+        if (g_ball2_position.x > 5.0f) {
+            g_gameover = true;
+        }
+        if (g_ball2_position.x < -5.0f) {
+            g_gameover = true;
+            g_player1_wins = false;
+        }
+    }
+    if (g_balls_number == threeBalls) {
+        if (g_ball3_position.x > 5.0f) {
+            g_gameover = true;
+        }
+        if (g_ball3_position.x < -5.0f) {
+            g_gameover = true;
+            g_player1_wins = false;
+        }
     }
 
     g_ball_position += g_ball_movement * g_ball_speed * delta_time;
+    g_ball2_position += g_ball2_movement * g_ball_speed * delta_time;
+    g_ball3_position += g_ball3_movement * g_ball_speed * delta_time;
 
     g_ball_model_matrix = glm::mat4(1.0f);
     g_ball_model_matrix = glm::translate(g_ball_model_matrix, g_ball_position);
 
+    g_ball2_model_matrix = glm::mat4(1.0f);
+    g_ball2_model_matrix = glm::translate(g_ball2_model_matrix, g_ball2_position);
+
+    g_ball3_model_matrix = glm::mat4(1.0f);
+    g_ball3_model_matrix = glm::translate(g_ball3_model_matrix, g_ball3_position);
+
     g_ball_model_matrix = glm::rotate(g_ball_model_matrix, glm::radians(g_rot_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+    g_ball2_model_matrix = glm::rotate(g_ball2_model_matrix, glm::radians(g_rot_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+    g_ball3_model_matrix = glm::rotate(g_ball3_model_matrix, glm::radians(g_rot_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 
 }
 
@@ -375,12 +485,25 @@ void render() {
         glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, ball_texture_coordinates);
         glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-        draw_object(g_ball_model_matrix, g_ball_texture_id);
+        switch (g_balls_number) {
+        case oneBall:
+            draw_object(g_ball_model_matrix, g_ball_texture_id);
+            break;
+        case twoBalls:
+            draw_object(g_ball_model_matrix, g_ball_texture_id);
+            draw_object(g_ball2_model_matrix, g_ball_texture_id);
+            break;
+        case threeBalls:
+            draw_object(g_ball_model_matrix, g_ball_texture_id);
+            draw_object(g_ball2_model_matrix, g_ball_texture_id);
+            draw_object(g_ball3_model_matrix, g_ball_texture_id);
+            break;
+        }
     }
     else {
         int SCALE = 100;
-        float model_width = 422.0f / SCALE; // width of the image
-        float model_height = 182.0f / SCALE; // height of the image
+        float model_width = 309.0f / SCALE; // width of the image
+        float model_height = 258.0f / SCALE; // height of the image
         float vertices[] = {
             -model_width / 2.0f, -model_height / 2.0f,
             model_width / 2.0f, -model_height / 2.0f,
@@ -407,7 +530,13 @@ void render() {
 
         glm::mat4 origin_pos = glm::mat4(1.0f);
 
-        draw_object(origin_pos, g_over_texture_id);
+        if (g_player1_wins) {
+            draw_object(origin_pos, g_over_texture_id);
+        }
+        else {
+            draw_object(origin_pos, g_over2_texture_id);
+        }
+        
 
 
     }
