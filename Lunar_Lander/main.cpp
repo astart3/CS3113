@@ -27,9 +27,11 @@ struct Box
 {
     glm::mat4 m_model_matrix = glm::mat4(1.0f);
     bool is_black = true;
+    glm::vec3 m_position = glm::vec3(0.0f);
 
-    Box(glm::mat4 matrix, bool black) {
+    Box(glm::mat4 matrix, glm::vec3 pos, bool black) {
         m_model_matrix = matrix;
+        m_position = pos;
         is_black = black;
     }
     
@@ -64,10 +66,12 @@ void initializeBoxes(std::vector<Box>& boxes) {
 
         glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(posX, -3.5f, 0.0f));
 
+        glm::vec3 modelPosition = glm::vec3(posX, -3.5f, 0.0f);
+
         // Alternate between black and white boxes
         bool isBlack = (col % 2 == 0);
 
-        boxes.emplace_back(modelMatrix, isBlack);
+        boxes.emplace_back(modelMatrix, modelPosition, isBlack);
     }
 }
 
@@ -107,6 +111,9 @@ ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
+
+bool g_game_end = false;
+bool g_game_win = false;
 
 
 //FUNCTION PROFESSOR WROTE IN CLASS
@@ -241,6 +248,18 @@ void update()
     g_previous_ticks = ticks;
     
     g_game_state.player->update(delta_time);
+
+    for (const auto& box : g_boxes) {
+        if (g_game_state.player->check_collision(box.m_position)) {
+            if (box.is_black) {
+                g_game_win = true;
+            }
+            else {
+                g_game_win = false;
+            }
+            g_game_end = true;
+        }
+    }
 }
 
 void render() {

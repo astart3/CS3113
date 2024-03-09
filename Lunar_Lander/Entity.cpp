@@ -118,3 +118,14 @@ void Entity::render(ShaderProgram *program)
     glDisableVertexAttribArray(program->get_position_attribute());
     glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
 }
+
+bool const Entity::check_collision(const glm::vec3& boxPosition) const {
+
+    float distanceX = abs(m_position.x - boxPosition.x);
+
+    if (distanceX < COLLISION_DIST) {
+        return true; 
+    }
+
+    return false;
+}

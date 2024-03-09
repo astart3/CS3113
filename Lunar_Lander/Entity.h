@@ -16,6 +16,7 @@ private:
     static const int SECONDS_PER_FRAME = 4;
     const float SHIP_SPEED = 2.0f;
     const float ROT_SPEED = 1.0f;
+    const float COLLISION_DIST = 0.5f;
     
     // ————— TEXTURES ————— //
     GLuint    m_idle_texture_id;
@@ -36,12 +37,14 @@ public:
     
     void rotate_left() { m_ship_angle += 1.0f; };
     void rotate_right() { m_ship_angle += -1.0f; };
+    bool const check_collision(const glm::vec3& boxPosition) const;
     
     // ————— GETTERS ————— //
     glm::vec3 const get_position()   const { return m_position;   };
     glm::vec3 const get_velocity()   const { return m_velocity;   };
     GLuint    const get_idle_texture_id() const { return m_idle_texture_id; };
     GLuint    const get_moving_texture_id() const { return m_moving_texture_id; };
+
     
     // ————— SETTERS ————— //
     void const set_position(glm::vec3 new_position)  { m_position   = new_position;     };
