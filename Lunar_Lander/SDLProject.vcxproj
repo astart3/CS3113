@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>C:\SDL\glew\lib\Release\Win32;C:\SDL\SDL2\lib\x86;C:\SDL\SDL2_image\lib\x86;C:\SDL\SDL2_mixer\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glew32.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -127,10 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="ShaderProgram.h" />
   </ItemGroup>
   <ItemGroup>

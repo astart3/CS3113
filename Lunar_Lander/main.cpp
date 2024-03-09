@@ -12,8 +12,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "ShaderProgram.h"
 #include "stb_image.h"
+#include "Entity.h"
+#include <iostream>
 
 #define LOG(argument) std::cout << argument << '\n'
+
+struct GameState
+{
+    Entity* player;
+};
+
+GameState g_game_state;
 
 SDL_Window* g_display_window;
 bool g_game_is_running = true; //tracks whether game is running
@@ -32,45 +41,18 @@ F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 const float DEGREES_PER_SECOND = 90.0f;
-//const float MINIMUM_X_COLLISION_DISTANCE = 0.375f;
-//const float MINIMUM_Y_COLLISION_DISTANCE = 0.8f;
 
 const int NUMBER_OF_TEXTURES = 1; // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
 const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
-//filepaths for assets
-const char IDLE_SPRITE_FILEPATH[] = "sprites/ship_idle.png";     //192 x 192
-const char MOVING_SPRITE_FILEPATH[] = "sprites/ship_move.png";     //1152 x 192 = 6 * 192 * 192
-
-//DEFINE GLOBAL VARIABLES
-//texture files
-GLuint g_idle_texture_id;
-GLuint g_moving_texture_id;
+const char IDLE_SPRITE_FILEPATH[] = "sprites/ship_idle.png";     
+const char MOVING_SPRITE_FILEPATH[] = "sprites/ship_move.png"; 
 
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
-//model matrices of assets use
-glm::mat4 g_player_model_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
-
-
-glm::vec3 g_player_position = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_player_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 g_player_acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
-bool g_accelerating = false;
-
-const glm::vec3 GRAVITY_ACCELERATION = glm::vec3(0.0f, -0.1f, 0.0f);
-const float SHIP_ACCELERATION = 0.2f;
-
-
-float g_player_speed = 5.0f;
-
-//const float ROT_SPEED = 22.5f;
-const float ROT_SPEED = 1.0f;
-float g_ship_angle = 0.0f;
-
 
 //START OF CODE -----------------------------------------------------------------------------------------
 
@@ -109,7 +91,7 @@ void initialise()
     // Initialise video and joystick subsystems
     SDL_Init(SDL_INIT_VIDEO);
 
-    g_display_window = SDL_CreateWindow("Pong Game",
+    g_display_window = SDL_CreateWindow("Lunar Lander",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_OPENGL);
@@ -125,8 +107,6 @@ void initialise()
 
     g_shader_program.load(V_SHADER_PATH, F_SHADER_PATH);
 
-    g_player_model_matrix = glm::mat4(1.0f);
-
     view_matrix = glm::mat4(1.0f);
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f); 
 
@@ -138,9 +118,14 @@ void initialise()
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f); //sets background to white by default
 
     //loads textures based on filepath
-    g_idle_texture_id = load_texture(IDLE_SPRITE_FILEPATH);
-    g_moving_texture_id = load_texture(MOVING_SPRITE_FILEPATH);
 
+    // ————— PLAYER ————— //
+    g_game_state.player = new Entity();
+    //g_game_state.player->set_position(glm::vec3(-3.0f, 3.0f, 0.0f));
+    g_game_state.player->set_position(glm::vec3(0.0f, 0.0f, 0.0f));
+    g_game_state.player->set_velocity(glm::vec3(0.0f));
+    g_game_state.player->set_idle_texture_id(load_texture(IDLE_SPRITE_FILEPATH));
+    g_game_state.player->set_moving_texture_id(load_texture(MOVING_SPRITE_FILEPATH));
 
     // enable blending
     glEnable(GL_BLEND);
@@ -149,7 +134,6 @@ void initialise()
 
 void process_input()
 {
-    g_player_velocity = glm::vec3(0.0f);
     SDL_Event event;
 
     while (SDL_PollEvent(&event))
@@ -180,18 +164,18 @@ void process_input()
 
     if (key_state[SDL_SCANCODE_LEFT])
     {
-        g_ship_angle += ROT_SPEED;
+        g_game_state.player->rotate_left();
     }
     else if (key_state[SDL_SCANCODE_RIGHT])
     {
-        g_ship_angle += -ROT_SPEED;
+        g_game_state.player->rotate_right();
     }
     if (key_state[SDL_SCANCODE_SPACE])
     {
-        g_accelerating = true;
+        g_game_state.player->set_acceleration(true);
     }
     else {
-        g_accelerating = false;
+        g_game_state.player->set_acceleration(false);
     }
 }
 
@@ -200,61 +184,15 @@ void update()
     float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
     float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
     g_previous_ticks = ticks;
-
-    glClearColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f);
     
-    if (g_accelerating) {
-        g_player_velocity += glm::vec3(-SHIP_ACCELERATION * sin(glm::radians(g_ship_angle)),SHIP_ACCELERATION * cos(glm::radians(g_ship_angle)), 0.0f);
-    }
-    g_player_velocity += GRAVITY_ACCELERATION;
-    g_player_position += g_player_velocity * g_player_speed * delta_time;
-
-    g_player_model_matrix = glm::mat4(1.0f);
-    g_player_model_matrix = glm::translate(g_player_model_matrix, g_player_position);
-    g_player_model_matrix = glm::rotate(g_player_model_matrix, glm::radians(g_ship_angle), glm::vec3(0.0f, 0.0f, 1.0f));
-}
-
-//FUNCTION PROFESSOR USED IN EXAMPLE
-void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
-{
-    g_shader_program.set_model_matrix(object_model_matrix);
-    glBindTexture(GL_TEXTURE_2D, object_texture_id);
-    glDrawArrays(GL_TRIANGLES, 0, 6); // we are now drawing 2 triangles, so we use 6 instead of 3
+    g_game_state.player->update(delta_time);
 }
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    //declare vertices based on dimension of image
-    int SCALE = 240;
-    float model_width = 192.0f / SCALE; // width of the image
-    float model_height = 192.0f / SCALE; // height of the image
-    float vertices[] = {
-        model_width, -model_width,
-        model_width, model_width,
-        -model_width, model_width,  // triangle 1
-        model_width, -model_width,
-        -model_width, model_width,
-        -model_width, -model_width   // triangle 2
-    };
 
-    // Textures
-    float texture_coordinates[] = {
-        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
-        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
-    };
+    g_game_state.player->render(&g_shader_program);
 
-
-    glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
-    glEnableVertexAttribArray(g_shader_program.get_position_attribute());
-
-    glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates);
-    glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
-
-    draw_object(g_player_model_matrix, g_idle_texture_id);
-   
-    // We disable two attribute arrays now
-    glDisableVertexAttribArray(g_shader_program.get_position_attribute());
-    glDisableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
     SDL_GL_SwapWindow(g_display_window);
 }
 
@@ -267,7 +205,7 @@ int main(int argc, char* argv[])
 /**
 * Author: Cato Wen
 * Assignment: Lunar Lander
-* Date due: 2024-09-03, 11:59pm
+* Date due: 2024-03-09, 11:59pm
 * I pledge that I have completed this assignment without
 * collaborating with anyone else, in conformance with the
 * NYU School of Engineering Policies and Procedures on
