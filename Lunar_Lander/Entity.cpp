@@ -83,6 +83,8 @@ void Entity::update(float delta_time)
     }
     m_position += m_velocity * SHIP_SPEED * delta_time;
 
+    //std::cout << m_velocity.y << std::endl;
+
     m_model_matrix = glm::mat4(1.0f);
     m_model_matrix = glm::translate(m_model_matrix, m_position);
     m_model_matrix = glm::rotate(m_model_matrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));

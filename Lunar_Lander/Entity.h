@@ -9,12 +9,12 @@ private:
     float     m_ship_angle = 0.0f;
 
     // ————— STATIC VARIABLES ————— //
-    const glm::vec3 GRAVITY_ACCELERATION = glm::vec3(0.0f, -0.1f, 0.0f);
-    const float SHIP_ACCELERATION = 0.2f;
-    const float MAX_GRAVITY_VELOCITY = -0.5f;
-    const float MAX_HORIZONTAL_VELOCITY = 0.4f;
+    const glm::vec3 GRAVITY_ACCELERATION = glm::vec3(0.0f, -0.02f, 0.0f);
+    const float SHIP_ACCELERATION = 0.05f;
+    const float MAX_GRAVITY_VELOCITY = -1.5f;
+    const float MAX_HORIZONTAL_VELOCITY = 1.0f;
     static const int SECONDS_PER_FRAME = 4;
-    const float SHIP_SPEED = 5.0f;
+    const float SHIP_SPEED = 2.0f;
     const float ROT_SPEED = 1.0f;
     
     // ————— TEXTURES ————— //

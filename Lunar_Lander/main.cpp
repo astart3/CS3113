@@ -14,6 +14,7 @@
 #include "stb_image.h"
 #include "Entity.h"
 #include <iostream>
+#include <vector>
 
 #define LOG(argument) std::cout << argument << '\n'
 
@@ -21,6 +22,54 @@ struct GameState
 {
     Entity* player;
 };
+
+struct Box
+{
+    glm::mat4 m_model_matrix = glm::mat4(1.0f);
+    bool is_black = true;
+
+    Box(glm::mat4 matrix, bool black) {
+        m_model_matrix = matrix;
+        is_black = black;
+    }
+    
+    void render(ShaderProgram* program, GLuint* texture_id)
+    {
+        program->set_model_matrix(m_model_matrix);
+
+        float vertices[] = { -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5 };
+        float tex_coords[] = { 0.0,  1.0, 1.0,  1.0, 1.0, 0.0,  0.0,  1.0, 1.0, 0.0,  0.0, 0.0 };
+
+        glBindTexture(GL_TEXTURE_2D, *texture_id);
+
+        glVertexAttribPointer(program->get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
+        glEnableVertexAttribArray(program->get_position_attribute());
+        glVertexAttribPointer(program->get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, tex_coords);
+        glEnableVertexAttribArray(program->get_tex_coordinate_attribute());
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glDisableVertexAttribArray(program->get_position_attribute());
+        glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
+    }
+};
+
+std::vector<Box> g_boxes;
+
+void initializeBoxes(std::vector<Box>& boxes) {
+    int cols = 11;
+    float posX = -((cols-1)/2);
+    for (int col = 0; col < cols; ++col) {
+        posX = -((cols - 1) / 2) + col;
+
+        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(posX, -3.5f, 0.0f));
+
+        // Alternate between black and white boxes
+        bool isBlack = (col % 2 == 0);
+
+        boxes.emplace_back(modelMatrix, isBlack);
+    }
+}
 
 GameState g_game_state;
 
@@ -48,13 +97,17 @@ const GLint TEXTURE_BORDER = 0;   // this value MUST be zero
 
 const char IDLE_SPRITE_FILEPATH[] = "sprites/ship_idle.png";     
 const char MOVING_SPRITE_FILEPATH[] = "sprites/ship_move.png"; 
+const char BLACK_BOX_SPRITE_FILEPATH[] = "sprites/black_box.png";
+const char RED_BOX_SPRITE_FILEPATH[] = "sprites/red_box.png";
+
+GLuint g_black_box_texture_id;
+GLuint g_red_box_texture_id;
 
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
 
 float g_previous_ticks = 0.0f; //used for delta time calculation
 
-//START OF CODE -----------------------------------------------------------------------------------------
 
 //FUNCTION PROFESSOR WROTE IN CLASS
 GLuint load_texture(const char* filepath)
@@ -117,12 +170,14 @@ void initialise()
 
     glClearColor(255.0f, 255.0f, 255.0f, 1.0f); //sets background to white by default
 
-    //loads textures based on filepath
+    g_black_box_texture_id = load_texture(BLACK_BOX_SPRITE_FILEPATH);
+    g_red_box_texture_id = load_texture(RED_BOX_SPRITE_FILEPATH);
+
+    initializeBoxes(g_boxes);
 
     // ————— PLAYER ————— //
     g_game_state.player = new Entity();
-    //g_game_state.player->set_position(glm::vec3(-3.0f, 3.0f, 0.0f));
-    g_game_state.player->set_position(glm::vec3(0.0f, 0.0f, 0.0f));
+    g_game_state.player->set_position(glm::vec3(-3.0f, 3.0f, 0.0f));
     g_game_state.player->set_velocity(glm::vec3(0.0f));
     g_game_state.player->set_idle_texture_id(load_texture(IDLE_SPRITE_FILEPATH));
     g_game_state.player->set_moving_texture_id(load_texture(MOVING_SPRITE_FILEPATH));
@@ -190,6 +245,15 @@ void update()
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
+
+    for (auto& box : g_boxes) {
+        if (box.is_black) {
+            box.render(&g_shader_program, &g_black_box_texture_id);
+        }
+        else {
+            box.render(&g_shader_program, &g_red_box_texture_id);
+        }
+    }
 
     g_game_state.player->render(&g_shader_program);
 
