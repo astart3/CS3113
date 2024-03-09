@@ -204,7 +204,7 @@ void update()
     glClearColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0f);
     
     if (g_accelerating) {
-        g_player_velocity += glm::vec3(SHIP_ACCELERATION * sin(g_ship_angle),SHIP_ACCELERATION * cos(g_ship_angle), 0.0f);
+        g_player_velocity += glm::vec3(-SHIP_ACCELERATION * sin(glm::radians(g_ship_angle)),SHIP_ACCELERATION * cos(glm::radians(g_ship_angle)), 0.0f);
     }
     g_player_velocity += GRAVITY_ACCELERATION;
     g_player_position += g_player_velocity * g_player_speed * delta_time;
