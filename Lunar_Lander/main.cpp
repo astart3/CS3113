@@ -103,9 +103,13 @@ const char IDLE_SPRITE_FILEPATH[] = "sprites/ship_idle.png";
 const char MOVING_SPRITE_FILEPATH[] = "sprites/ship_move.png"; 
 const char BLACK_BOX_SPRITE_FILEPATH[] = "sprites/black_box.png";
 const char RED_BOX_SPRITE_FILEPATH[] = "sprites/red_box.png";
+const char WIN_SPRITE_FILEPATH[] = "sprites/win.png";
+const char LOSE_SPRITE_FILEPATH[] = "sprites/lose.png";
 
 GLuint g_black_box_texture_id;
 GLuint g_red_box_texture_id;
+GLuint g_win_texture_id;
+GLuint g_lose_texture_id;
 
 ShaderProgram g_shader_program; //shader program
 glm::mat4 view_matrix, g_projection_matrix;
@@ -179,6 +183,8 @@ void initialise()
 
     g_black_box_texture_id = load_texture(BLACK_BOX_SPRITE_FILEPATH);
     g_red_box_texture_id = load_texture(RED_BOX_SPRITE_FILEPATH);
+    g_win_texture_id = load_texture(WIN_SPRITE_FILEPATH);
+    g_lose_texture_id = load_texture(LOSE_SPRITE_FILEPATH);
 
     initializeBoxes(g_boxes);
 
@@ -243,21 +249,25 @@ void process_input()
 
 void update()
 {
-    float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
-    float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
-    g_previous_ticks = ticks;
-    
-    g_game_state.player->update(delta_time);
+    if (not g_game_end) {
+        float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
+        float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
+        g_previous_ticks = ticks;
 
-    for (const auto& box : g_boxes) {
-        if (g_game_state.player->check_collision(box.m_position)) {
-            if (box.is_black) {
-                g_game_win = true;
+        g_game_state.player->update(delta_time);
+
+        for (const auto& box : g_boxes) {
+            if (g_game_state.player->check_collision(box.m_position)) {
+                if (box.is_black) {
+                    g_game_win = true;
+                    std::cout << "WIN" << std::endl;
+                }
+                else {
+                    g_game_win = false;
+                    std::cout << "LOSS" << std::endl;
+                }
+                g_game_end = true;
             }
-            else {
-                g_game_win = false;
-            }
-            g_game_end = true;
         }
     }
 }
@@ -265,16 +275,66 @@ void update()
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (auto& box : g_boxes) {
-        if (box.is_black) {
-            box.render(&g_shader_program, &g_black_box_texture_id);
+    if (! g_game_end) {
+        for (auto& box : g_boxes) {
+            if (box.is_black) {
+                box.render(&g_shader_program, &g_black_box_texture_id);
+            }
+            else {
+                box.render(&g_shader_program, &g_red_box_texture_id);
+            }
+        }
+
+        g_game_state.player->render(&g_shader_program);
+        
+    }
+    else {
+        g_shader_program.set_model_matrix(glm::mat4(1.0f));
+
+        //float vertices[] = { -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5 };
+        float tex_coords[] = { 0.0,  1.0, 1.0,  1.0, 1.0, 0.0,  0.0,  1.0, 1.0, 0.0,  0.0, 0.0 };
+
+        if (g_game_win) {
+            glBindTexture(GL_TEXTURE_2D, g_win_texture_id);
+            int SCALE = 100;
+            float model_width = 525.0f / SCALE;
+            float model_height = 260.0f / SCALE;
+            float vertices[] = {
+                -model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, model_height / 2.0f,
+                -model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, model_height / 2.0f,
+                -model_width / 2.0f, model_height / 2.0f
+            };
+            glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
         }
         else {
-            box.render(&g_shader_program, &g_red_box_texture_id);
+            glBindTexture(GL_TEXTURE_2D, g_lose_texture_id);
+            int SCALE = 250;
+            float model_width = 1200.0f / SCALE;
+            float model_height = 670.0f / SCALE;
+            float vertices[] = {
+                -model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, model_height / 2.0f,
+                -model_width / 2.0f, -model_height / 2.0f,
+                model_width / 2.0f, model_height / 2.0f,
+                -model_width / 2.0f, model_height / 2.0f
+            };
+            glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, vertices);
         }
-    }
+        
+        
+        glEnableVertexAttribArray(g_shader_program.get_position_attribute());
+        glVertexAttribPointer(g_shader_program.get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, tex_coords);
+        glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
-    g_game_state.player->render(&g_shader_program);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glDisableVertexAttribArray(g_shader_program.get_position_attribute());
+        glDisableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
+    }
 
     SDL_GL_SwapWindow(g_display_window);
 }

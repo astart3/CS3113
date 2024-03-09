@@ -7,6 +7,7 @@ private:
     glm::mat4 m_model_matrix;
     bool      m_accelerating = false;
     float     m_ship_angle = 0.0f;
+    int       fuel = 300;
 
     // ————— STATIC VARIABLES ————— //
     const glm::vec3 GRAVITY_ACCELERATION = glm::vec3(0.0f, -0.02f, 0.0f);

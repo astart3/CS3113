@@ -65,8 +65,12 @@ void Entity::draw_sprite_from_texture_atlas(ShaderProgram *program, GLuint textu
 
 void Entity::update(float delta_time)
 {
-    if (m_accelerating) {
+    if (m_accelerating && fuel > 0) {
         m_velocity += glm::vec3(-SHIP_ACCELERATION * sin(glm::radians(m_ship_angle)), SHIP_ACCELERATION * cos(glm::radians(m_ship_angle)), 0.0f);
+        fuel = fuel - 1;
+    }
+    else {
+        m_accelerating = false;
     }
     m_velocity += GRAVITY_ACCELERATION;
     if (m_velocity.y < MAX_GRAVITY_VELOCITY) {
@@ -122,8 +126,9 @@ void Entity::render(ShaderProgram *program)
 bool const Entity::check_collision(const glm::vec3& boxPosition) const {
 
     float distanceX = abs(m_position.x - boxPosition.x);
+    float distanceY = abs(m_position.y - boxPosition.y);
 
-    if (distanceX < COLLISION_DIST) {
+    if (distanceY < COLLISION_DIST and distanceX < COLLISION_DIST) {
         return true; 
     }
 
